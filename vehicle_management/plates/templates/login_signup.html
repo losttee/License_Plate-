@@ -1,0 +1,257 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login / Signup</title>
+
+  <!-- Font Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: url("{% static 'plates/images/background.jpg' %}") no-repeat center center;
+      background-size: cover;
+      background-color: rgba(255, 255, 255, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      display: flex;
+      max-width: 1100px;
+      width: 100%;
+      background-color: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .left {
+      flex: 1.5;
+      background-color: #eaf1ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .left img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 16px;
+    }
+
+    .right {
+      flex: 1.8;
+      padding: 60px;
+    }
+
+    .right h2 {
+      font-size: 34px;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 12px;
+    }
+
+    .right p {
+      font-size: 17px;
+      color: #7f8c8d;
+      margin-bottom: 32px;
+    }
+
+    .tab-buttons {
+      display: flex;
+      margin-bottom: 32px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-size: 17px;
+      border-bottom: 2px solid transparent;
+      transition: all 0.3s ease;
+      color: #555;
+    }
+
+    .tab-btn.active {
+      border-color: #306bff;
+      color: #306bff;
+      font-weight: 600;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 10px;
+      color: #2c3e50;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="password"],
+    .form-group input[type="email"],
+    .form-group select {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #dce1f0;
+      border-radius: 12px;
+      font-size: 16px;
+      background-color: #edf2ff;
+      transition: 0.3s;
+    }
+
+    .form-group select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      background-size: 16px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #306bff;
+      background-color: #e9f0ff;
+    }
+
+    .submit-btn {
+      background-color: #306bff;
+      color: white;
+      padding: 14px;
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .submit-btn:hover {
+      background-color: #265cd4;
+      box-shadow: 0 4px 12px rgba(48, 107, 255, 0.3);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .left {
+        display: none;
+      }
+
+      .right {
+        padding: 30px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="left">
+      <img src="{% static 'plates/images/illustration.jpg' %}" alt="Illustration" />
+    </div>
+    <div class="right">
+      <h2>Welcome to Vehicle System</h2>
+      <p>Login or register to continue</p>
+
+      <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab('login')">Login</button>
+        <button class="tab-btn" onclick="switchTab('signup')">Register</button>
+      </div>
+
+      <div id="login" class="tab-content active">
+        <form method="post" action="{% url 'login' %}">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="id_username">Email/Username</label>
+            <input type="text" name="username" id="id_username" required />
+          </div>
+          <div class="form-group">
+            <label for="id_password">Password</label>
+            <input type="password" name="password" id="id_password" required />
+          </div>
+          <div class="form-group">
+            <input type="submit" value="Login" class="submit-btn" />
+            <input type="hidden" name="next" value="{% url 'dashboard' %}" />
+          </div>
+        </form>
+      </div>
+
+      <div id="signup" class="tab-content">
+        <form method="post" action="{% url 'signup' %}">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="id_username_signup">Username</label>
+            <input type="text" name="username" id="id_username_signup" required />
+          </div>
+          <div class="form-group">
+            <label for="id_email">Email</label>
+            <input type="email" name="email" id="id_email" required />
+          </div>
+          <div class="form-group">
+            <label for="id_password1">Password</label>
+            <input type="password" name="password1" id="id_password1" required />
+          </div>
+          <div class="form-group">
+            <label for="id_password2">Confirm Password</label>
+            <input type="password" name="password2" id="id_password2" required />
+          </div>
+          <div class="form-group">
+            <label for="id_role">Role</label>
+            <select name="role" id="id_role" required>
+              <option value="guard">Guard</option>
+              <option value="manager">Manager</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <input type="submit" value="Register" class="submit-btn" />
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      const tabs = document.querySelectorAll(".tab-content");
+      const buttons = document.querySelectorAll(".tab-btn");
+
+      tabs.forEach(tab => tab.classList.remove("active"));
+      buttons.forEach(btn => btn.classList.remove("active"));
+
+      document.getElementById(tabId).classList.add("active");
+      event.currentTarget.classList.add("active");
+    }
+  </script>
+</body>
+</html>

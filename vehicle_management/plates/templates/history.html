@@ -1,0 +1,138 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>History</title>
+    <link rel="stylesheet" href="{% static 'plates/css/checkin.css' %}">
+</head>
+<body>
+    <!-- Thanh điều hướng trên cùng -->
+    <nav class="navbar">
+        <ul class="nav-list">
+            <li class="account-dropdown">
+                <a href="#">My Account</a>
+                <div class="account-info">
+                    <div class="account-name">{{ request.user.username }}</div>
+                    <div class="account-role">{{ request.user.userprofile.role|capfirst }}</div>
+                </div>
+            </li>
+            <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li><a href="{% url 'checkin' %}">Check-In/Out</a></li>
+            <li><a class="active" href="{% url 'history' %}">History</a></li>
+            <li><a href="{% url 'user_statistic' %}">User Statistic</a></li>
+        </ul>
+        <a class="logout" href="{% url 'logout' %}">→ Log out</a>
+    </nav>
+
+    <div class="history-section">
+        <div class="history-header">
+            <form class="history-search-wrapper" method="get" action="">
+                <input type="text" class="history-search" placeholder="Search" name="search" value="{{ search|default:'' }}">
+                <button type="submit" class="search-icon"></button>
+            </form>
+            <div class="sort-box" id="historySortBox">
+                Sort by :
+                <span id="historySortDateLabel" style="font-weight:700; cursor:pointer;">Today ▼</span>
+                <input type="date" id="historySortDateInput" style="display:none; margin-left:8px;" value="{{ date_filter }}">
+            </div>
+        </div>
+        <div class="history-table-wrapper">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Users Name</th>
+                        <th>Unit</th>
+                        <th>Model</th>
+                        <th>License Plate</th>
+                        <th>Check-In Time</th>
+                        <th>Check-Out Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for history in histories %}
+                    <tr>
+                        <td>{{ history.vehicle.user_name|default:"-" }}</td>
+                        <td>{{ history.vehicle.unit|default:"-" }}</td>
+                        <td>{{ history.vehicle.model|default:"-" }}</td>
+                        <td>{{ history.license_plate }}</td>
+                        <td>{{ history.entry_time|date:"d/m/Y H:i:s" }}</td>
+                        <td>{{ history.exit_time|date:"d/m/Y H:i:s"|default:"-" }}</td>
+                        <td>
+                            <span class="status-badge {% if history.action_type == 'done' %}done{% else %}inlot{% endif %}">
+                                {{ history.action_type|title }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center;">No records found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="history-footer">
+            <div class="history-info">
+                Showing data {{ histories.start_index|default:0 }} to {{ histories.end_index|default:0 }} of {{ histories.paginator.count|default:0 }} entries
+            </div>
+            <div class="history-pagination">
+                {% if histories.has_previous %}
+                    <button class="page-btn" onclick="changePage({{ histories.previous_page_number }})">&lt;</button>
+                {% else %}
+                    <button class="page-btn" disabled>&lt;</button>
+                {% endif %}
+
+                {% for i in histories.paginator.page_range %}
+                    {% if histories.number == i %}
+                        <button class="page-btn active">{{ i }}</button>
+                    {% else %}
+                        <button class="page-btn" onclick="changePage({{ i }})">{{ i }}</button>
+                    {% endif %}
+                {% endfor %}
+
+                {% if histories.has_next %}
+                    <button class="page-btn" onclick="changePage({{ histories.next_page_number }})">&gt;</button>
+                {% else %}
+                    <button class="page-btn" disabled>&gt;</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+</body>
+</html>
+
+<script>
+const historySortDateLabel = document.getElementById('historySortDateLabel');
+const historySortDateInput = document.getElementById('historySortDateInput');
+
+historySortDateLabel.onclick = function() {
+    historySortDateInput.style.display = 'inline-block';
+    historySortDateInput.focus();
+};
+
+historySortDateInput.onchange = function() {
+    if (historySortDateInput.value) {
+        const date = new Date(historySortDateInput.value);
+        const formatted = date.toLocaleDateString('en-GB');
+        historySortDateLabel.textContent = formatted + ' ▼';
+        // Nếu muốn filter theo ngày, có thể submit form hoặc reload url với tham số date
+        // window.location.href = `{% url 'history' %}?date=${historySortDateInput.value}`;
+    } else {
+        historySortDateLabel.textContent = 'Today ▼';
+    }
+    historySortDateInput.style.display = 'none';
+};
+
+historySortDateInput.onblur = function() {
+    historySortDateInput.style.display = 'none';
+};
+
+function changePage(page) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', page);
+    window.location.href = `{% url 'history' %}?${params.toString()}`;
+}
+</script>

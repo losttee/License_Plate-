@@ -1,0 +1,278 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Statistic</title>
+    <link rel="stylesheet" href="{% static 'plates/css/checkin.css' %}">
+    <style>
+        .avatar-thumb {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #eee;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        .edit-avatar-input {
+            display: block;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <ul class="nav-list">
+            <li class="account-dropdown">
+                <a href="#">My Account</a>
+                <div class="account-info">
+                    <div class="account-name">{{ request.user.username }}</div>
+                    <div class="account-role">{{ request.user.userprofile.role|capfirst }}</div>
+                </div>
+            </li>
+            <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li><a href="{% url 'checkin' %}">Check-In/Out</a></li>
+            <li><a href="{% url 'history' %}">History</a></li>
+            <li><a class="active" href="{% url 'user_statistic' %}">User Statistic</a></li>
+        </ul>
+        <a class="logout" href="{% url 'logout' %}">→ Log out</a>
+    </nav>
+
+    <div class="user-statistic-section">
+        <div class="history-header">
+            <form class="history-search-wrapper" method="get" action="">
+                <input type="text" class="history-search" placeholder="Search" id="searchInput" name="search" value="{{ search|default:'' }}">
+                <button type="submit" class="search-icon"></button>
+            </form>
+            {% if is_manager %}
+            <button class="add-btn" id="addUserBtn">+ Add Vehicle</button>
+            {% endif %}
+        </div>
+        <div class="history-table-wrapper">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Avatar</th>
+                        <th>Users Name</th>
+                        <th>Unit</th>
+                        <th>Model</th>
+                        <th>License Plate</th>
+                        <th>Phone Number</th>
+                        <th>Issued Date</th>
+                        <th>Expired Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vehicle in vehicles %}
+                    <tr data-id="{{ vehicle.id }}">
+                        <td>
+                            {% if vehicle.avatar %}
+                                <img src="{{ vehicle.avatar.url }}" class="avatar-thumb" alt="Avatar">
+                            {% endif %}
+                        </td>
+                        <td>{{ vehicle.user_name }}</td>
+                        <td>{{ vehicle.unit }}</td>
+                        <td>{{ vehicle.model }}</td>
+                        <td>{{ vehicle.license_plate }}</td>
+                        <td>{{ vehicle.phone_number }}</td>
+                        <td>{{ vehicle.issued_date|date:"d/m/Y" }}</td>
+                        <td>{{ vehicle.expired_date|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="status-badge {% if vehicle.status == 'Active' %}done{% else %}inlot{% endif %}">
+                                {{ vehicle.status }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if is_manager %}
+                            <button class="edit-btn">Edit</button>
+                            <button class="delete-btn">Delete</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_manager %}
+    <div class="modal" id="addUserModal">
+        <div class="modal-content">
+            <span class="close" id="closeUserModalBtn">×</span>
+            <h3>Add New Vehicle</h3>
+            <form id="addUserForm" action="{% url 'add_vehicle' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="text" placeholder="User Name" name="user_name" required>
+                <input type="text" placeholder="Unit" name="unit" required>
+                <input type="text" placeholder="Model" name="model" required>
+                <input type="text" placeholder="License Plate" name="license_plate" required>
+                <input type="text" placeholder="Phone Number" name="phone_number" required>
+                <input type="date" placeholder="Issued Date" name="issued_date" required>
+                <input type="date" placeholder="Expired Date" name="expired_date" required>
+                <label style="margin-top:8px;">Avatar (optional):</label>
+                <input type="file" name="avatar" accept="image/*">
+                <button type="submit" class="save-btn">Save</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <script>
+    // Hiển thị modal (chỉ áp dụng nếu là Manager)
+    {% if is_manager %}
+    document.getElementById('addUserBtn').onclick = function() {
+        document.getElementById('addUserModal').style.display = 'flex';
+    };
+    document.getElementById('closeUserModalBtn').onclick = function() {
+        document.getElementById('addUserModal').style.display = 'none';
+    };
+
+    // Thêm mới xe (lưu vào database qua AJAX)
+    document.getElementById('addUserForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        try {
+            const response = await fetch('{% url 'add_vehicle' %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            });
+            const result = await response.json();
+            if (result.message) {
+                location.reload(); // Reload để lấy dữ liệu mới từ database
+            } else {
+                alert('Thêm xe thất bại: ' + (result.error || 'Lỗi không xác định'));
+            }
+        } catch (error) {
+            alert('Lỗi kết nối: ' + error.message);
+        }
+    };
+
+    // Chức năng Edit (bổ sung input file cho avatar)
+    document.querySelectorAll('.edit-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+            var tr = btn.closest('tr');
+            var id = tr.getAttribute('data-id');
+            if (btn.textContent === 'Edit') {
+                // Lưu giá trị gốc để khôi phục khi cancel
+                const originalValues = [];
+                for (let i = 1; i < 8; i++) { // Bắt đầu từ index 1 (bỏ qua avatar column)
+                    let td = tr.children[i];
+                    let value = td.textContent;
+                    originalValues.push(value);
+                    td.innerHTML = `<input class="editing-input" value="${value}" ${i === 6 || i === 7 ? 'type="date" format="dd/mm/yyyy"' : 'type="text"'}>`;
+                    // Điều chỉnh định dạng ngày cho input date
+                    if (i === 6 || i === 7) {
+                        let input = td.querySelector('input');
+                        let dateParts = value.split('/');
+                        if (dateParts.length === 3) {
+                            input.value = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`; // YYYY-MM-DD
+                        }
+                    }
+                }
+                
+                // Thêm input file cho avatar
+                let avatarTd = tr.children[0];
+                const originalAvatarHTML = avatarTd.innerHTML;
+                avatarTd.innerHTML = `<input type="file" class="edit-avatar-input" accept="image/*">`;
+                
+                // Đổi nút thành Save và thêm Cancel
+                btn.textContent = 'Save';
+                btn.className = 'save-btn';
+                let cancelBtn = document.createElement('button');
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.className = 'cancel-btn';
+                btn.after(cancelBtn);
+
+                // Xử lý nút Save (gửi AJAX để cập nhật với FormData cho file upload)
+                btn.onclick = async function() {
+                    const formData = new FormData();
+                    formData.append('user_name', tr.children[1].querySelector('input').value);
+                    formData.append('unit', tr.children[2].querySelector('input').value);
+                    formData.append('model', tr.children[3].querySelector('input').value);
+                    formData.append('license_plate', tr.children[4].querySelector('input').value);
+                    formData.append('phone_number', tr.children[5].querySelector('input').value);
+                    formData.append('issued_date', tr.children[6].querySelector('input').value);
+                    formData.append('expired_date', tr.children[7].querySelector('input').value);
+                    
+                    // Thêm avatar file nếu có
+                    const avatarInput = tr.children[0].querySelector('input[type="file"]');
+                    if (avatarInput && avatarInput.files.length > 0) {
+                        formData.append('avatar', avatarInput.files[0]);
+                    }
+                    
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    try {
+                        const response = await fetch(`/update_vehicle/${id}/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: formData
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            // Reload trang để hiển thị dữ liệu cập nhật (bao gồm avatar mới)
+                            location.reload();
+                        } else {
+                            alert('Cập nhật thất bại: ' + (result.error || 'Lỗi không xác định'));
+                        }
+                    } catch (error) {
+                        alert('Lỗi kết nối: ' + error.message);
+                    }
+                };
+
+                // Xử lý nút Cancel
+                cancelBtn.onclick = function() {
+                    // Khôi phục avatar
+                    avatarTd.innerHTML = originalAvatarHTML;
+                    // Khôi phục các giá trị khác
+                    for (let i = 1; i < 8; i++) {
+                        let td = tr.children[i];
+                        td.textContent = originalValues[i - 1];
+                    }
+                    btn.textContent = 'Edit';
+                    btn.className = 'edit-btn';
+                    cancelBtn.remove();
+                    btn.onclick = null;
+                };
+            }
+        });
+    });
+
+    // Chức năng xóa (lưu vào database qua AJAX)
+    document.querySelectorAll('.delete-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+            if (confirm('Are you sure you want to delete this vehicle?')) {
+                const tr = btn.closest('tr');
+                const id = tr.getAttribute('data-id');
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                try {
+                    const response = await fetch(`/delete_vehicle/${id}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken
+                        }
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        tr.remove();
+                    } else {
+                        alert('Xóa thất bại: ' + (result.error || 'Lỗi không xác định'));
+                    }
+                } catch (error) {
+                    alert('Lỗi kết nối: ' + error.message);
+                }
+            }
+        });
+    });
+    {% endif %}
+    </script>
+</body>
+</html>

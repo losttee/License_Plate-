@@ -1,0 +1,194 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{% static 'plates/css/checkin.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Thêm khoảng cách giữa sort-box và dashboard-stats */
+        .sort-box {
+            margin-bottom: 32px;
+        }
+        .dashboard-chart {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 400px;
+        }
+        .dashboard-stats {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #4F46E5;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <!-- Thanh điều hướng trên cùng -->
+    <nav class="navbar">
+        <ul class="nav-list">
+            <li class="account-dropdown">
+                <a href="#">My Account</a>
+                <div class="account-info">
+                    <div class="account-name">{{ request.user.username }}</div>
+                    <div class="account-role">{{ request.user.userprofile.role|capfirst }}</div>
+                </div>
+            </li>
+            <li><a class="active" href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li><a href="{% url 'checkin' %}">Check-In/Out</a></li>
+            <li><a href="{% url 'history' %}">History</a></li>
+            <li><a href="{% url 'user_statistic' %}">User Statistic</a></li>
+        </ul>
+        <a class="logout" href="{% url 'logout' %}">→ Log out</a>
+    </nav>
+
+    <div class="container">
+        <div class="dashboard-section">
+            <div class="dashboard-left">
+                <div class="sort-box" id="sortBox">
+                    Sort by :
+                    <span id="sortDateLabel" style="font-weight:700; cursor:pointer;">
+                        {% if selected_date == today_date %}
+                            Today ▼
+                        {% else %}
+                            {{ selected_date|date:"d/m/Y" }} ▼
+                        {% endif %}
+                    </span>
+                    <input type="date" id="sortDateInput" style="display:none; margin-left:8px;" value="{{ selected_date }}">
+                </div>
+                <div class="dashboard-stats">
+                    <div class="stat-row">
+                        <span>Total Vehicles Today</span>
+                        <span class="stat-value">{{ stats.total_vehicles }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Current Vehicles Inside</span>
+                        <span class="stat-value">{{ stats.current_vehicles }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Active Registered Users</span>
+                        <span class="stat-value">{{ stats.active_users }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Average Parking Duration</span>
+                        <span class="stat-value">{{ stats.avg_duration }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="dashboard-right">
+                <div class="dashboard-chart">
+                    <canvas id="vehicleChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const sortDateLabel = document.getElementById('sortDateLabel');
+const sortDateInput = document.getElementById('sortDateInput');
+
+sortDateLabel.onclick = function() {
+    sortDateInput.style.display = 'inline-block';
+    sortDateInput.focus();
+};
+
+sortDateInput.onchange = function() {
+    if (sortDateInput.value) {
+        window.location.href = `{% url 'dashboard' %}?date=${sortDateInput.value}`;
+    }
+};
+
+sortDateInput.onblur = function() {
+    sortDateInput.style.display = 'none';
+};
+
+// Khởi tạo biểu đồ
+const ctx = document.getElementById('vehicleChart').getContext('2d');
+const hourlyData = {{ hourly_data|safe }};
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: hourlyData.map(d => d.hour),
+        datasets: [{
+            label: 'Vehicles per Hour',
+            data: hourlyData.map(d => d.count),
+            backgroundColor: 'rgba(79, 70, 229, 0.6)',
+            borderColor: 'rgb(79, 70, 229)',
+            borderWidth: 1,
+            borderRadius: 5,
+            maxBarThickness: 40
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1,
+                    font: {
+                        size: 12
+                    }
+                },
+                grid: {
+                    display: true,
+                    color: 'rgba(0, 0, 0, 0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    font: {
+                        size: 12
+                    }
+                }
+            }
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: 'Vehicle Traffic by Hour',
+                font: {
+                    size: 16,
+                    weight: 'bold'
+                },
+                padding: 20
+            },
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    font: {
+                        size: 12
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+</body>
+</html>
