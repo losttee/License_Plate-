@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}User Statistic{% endblock %}
+{% block nav_statistic %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+    .avatar-thumb {
+        width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
+        border: 1px solid #eee; margin-right: 6px; vertical-align: middle;
+    }
+    .edit-avatar-input { display: block; margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="user-statistic-section">
+    <div class="history-header">
+        <form class="history-search-wrapper" method="get" action="">
+            <input type="text" class="history-search" placeholder="Search" id="searchInput" name="search" value="{{ search|default:'' }}">
+            <button type="submit" class="search-icon"></button>
+        </form>
+        {% if is_manager %}
+        <button class="add-btn" id="addUserBtn">+ Add Vehicle</button>
+        {% endif %}
+    </div>
+    <div class="history-table-wrapper">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Avatar</th><th>Users Name</th><th>Unit</th><th>Model</th>
+                    <th>License Plate</th><th>Phone Number</th><th>Issued Date</th>
+                    <th>Expired Date</th><th>Status</th><th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vehicle in vehicles %}
+                <tr data-id="{{ vehicle.id }}">
+                    <td>{% if vehicle.avatar %}<img src="{{ vehicle.avatar.url }}" class="avatar-thumb" alt="Avatar">{% endif %}</td>
+                    <td>{{ vehicle.user_name }}</td>
+                    <td>{{ vehicle.unit }}</td>
+                    <td>{{ vehicle.model }}</td>
+                    <td>{{ vehicle.license_plate }}</td>
+                    <td>{{ vehicle.phone_number }}</td>
+                    <td>{{ vehicle.issued_date|date:"d/m/Y" }}</td>
+                    <td>{{ vehicle.expired_date|date:"d/m/Y" }}</td>
+                    <td>
+                        <span class="status-badge {% if vehicle.status == 'Active' %}done{% else %}inlot{% endif %}">{{ vehicle.status }}</span>
+                    </td>
+                    <td>
+                        {% if is_manager %}
+                        <button class="edit-btn">Edit</button>
+                        <button class="delete-btn">Delete</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="10" style="text-align:center;">No vehicles found</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if is_manager %}
+<div class="modal" id="addUserModal">
+    <div class="modal-content">
+        <span class="close" id="closeUserModalBtn">×</span>
+        <h3>Add New Vehicle</h3>
+        <form id="addUserForm" action="{% url 'add_vehicle' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="text" placeholder="User Name" name="user_name" required>
+            <input type="text" placeholder="Unit" name="unit" required>
+            <input type="text" placeholder="Model" name="model" required>
+            <input type="text" placeholder="License Plate" name="license_plate" required>
+            <input type="text" placeholder="Phone Number" name="phone_number" required>
+            <input type="date" placeholder="Issued Date" name="issued_date" required>
+            <input type="date" placeholder="Expired Date" name="expired_date" required>
+            <label style="margin-top:8px;">Avatar (optional):</label>
+            <input type="file" name="avatar" accept="image/*">
+            <button type="submit" class="save-btn">Save</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const CSRF_TOKEN = "{{ csrf_token }}";
+    const URLS = { add: "{% url 'add_vehicle' %}" };
+</script>
+<script src="{% static 'js/user_statistic.js' %}"></script>
+{% endblock %}

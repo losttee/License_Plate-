@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}History{% endblock %}
+{% block nav_history %}active{% endblock %}
+
+{% block content %}
+<div class="history-section">
+    <div class="history-header">
+        <form class="history-search-wrapper" method="get" action="">
+            <input type="text" class="history-search" placeholder="Search" name="search" value="{{ search|default:'' }}">
+            <button type="submit" class="search-icon"></button>
+        </form>
+        <div class="sort-box" id="historySortBox">
+            Sort by :
+            <span id="historySortDateLabel" style="font-weight:700; cursor:pointer;">Today ▼</span>
+            <input type="date" id="historySortDateInput" style="display:none; margin-left:8px;">
+        </div>
+    </div>
+    <div class="history-table-wrapper">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Users Name</th><th>Unit</th><th>Model</th><th>License Plate</th>
+                    <th>Check-In Time</th><th>Check-Out Time</th><th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for history in histories %}
+                <tr>
+                    <td>{{ history.vehicle.user_name|default:"-" }}</td>
+                    <td>{{ history.vehicle.unit|default:"-" }}</td>
+                    <td>{{ history.vehicle.model|default:"-" }}</td>
+                    <td>{{ history.license_plate }}</td>
+                    <td>{{ history.entry_time|date:"d/m/Y H:i:s" }}</td>
+                    <td>{{ history.exit_time|date:"d/m/Y H:i:s"|default:"-" }}</td>
+                    <td>
+                        <span class="status-badge {% if history.action_type == 'done' %}done{% else %}inlot{% endif %}">
+                            {{ history.action_type|title }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" style="text-align: center;">No records found</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="history-footer">
+        <div class="history-info">
+            Showing data {{ histories.start_index|default:0 }} to {{ histories.end_index|default:0 }} of {{ histories.paginator.count|default:0 }} entries
+        </div>
+        <div class="history-pagination">
+            {% if histories.has_previous %}
+                <button class="page-btn" onclick="changePage({{ histories.previous_page_number }})">&lt;</button>
+            {% else %}
+                <button class="page-btn" disabled>&lt;</button>
+            {% endif %}
+            {% for i in histories.paginator.page_range %}
+                {% if histories.number == i %}
+                    <button class="page-btn active">{{ i }}</button>
+                {% else %}
+                    <button class="page-btn" onclick="changePage({{ i }})">{{ i }}</button>
+                {% endif %}
+            {% endfor %}
+            {% if histories.has_next %}
+                <button class="page-btn" onclick="changePage({{ histories.next_page_number }})">&gt;</button>
+            {% else %}
+                <button class="page-btn" disabled>&gt;</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>const HISTORY_URL = "{% url 'history' %}";</script>
+<script src="{% static 'js/history.js' %}"></script>
+{% endblock %}

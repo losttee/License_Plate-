@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Vehicle Management{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/checkin.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <ul class="nav-list">
+            <li class="account-dropdown">
+                <a href="#">My Account</a>
+                <div class="account-info">
+                    <div class="account-name">{{ request.user.username }}</div>
+                    <div class="account-role">{{ request.user.userprofile.role|capfirst }}</div>
+                </div>
+            </li>
+            <li><a class="{% block nav_dashboard %}{% endblock %}" href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li><a class="{% block nav_checkin %}{% endblock %}" href="{% url 'checkin' %}">Check-In/Out</a></li>
+            <li><a class="{% block nav_history %}{% endblock %}" href="{% url 'history' %}">History</a></li>
+            <li><a class="{% block nav_statistic %}{% endblock %}" href="{% url 'user_statistic' %}">User Statistic</a></li>
+        </ul>
+        <a class="logout" href="{% url 'logout' %}">→ Log out</a>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

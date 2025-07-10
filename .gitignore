@@ -1,1 +1,23 @@
+# Virtualenvs
 myenv/
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Django
+*.log
+db.sqlite3
+staticfiles/
+
+# Environment / secrets
+.env
+
+# User-uploaded media
+media/
+
+# OS / editor
+.DS_Store
